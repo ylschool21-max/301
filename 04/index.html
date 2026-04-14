@@ -1,0 +1,328 @@
+```html
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>송충이를 피해서! 딸기 수확하기</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap');
+        
+        body { margin: 0; background-color: #064e3b; font-family: 'Black Han Sans', sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; }
+        
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            border: 15px solid #2d1a0a;
+            border-radius: 30px;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+            background: #000;
+            overflow: hidden;
+        }
+
+        video#input_video {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            z-index: 1;
+            filter: brightness(0.65) saturate(1.2);
+        }
+
+        canvas#output_canvas {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            transform: scaleX(-1);
+            pointer-events: none;
+        }
+
+        #item-layer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .strawberry-item {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: -50px;
+            margin-top: -50px;
+        }
+
+        .leaf {
+            position: absolute;
+            font-size: 5.5rem;
+            z-index: 15;
+            transition: all 0.7s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            filter: drop-shadow(0 8px 15px rgba(0,0,0,0.6));
+        }
+
+        .content {
+            position: absolute;
+            font-size: 4rem;
+            z-index: 12;
+            opacity: 0;
+            transform: scale(0.2);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .revealed .leaf {
+            opacity: 0;
+            transform: scale(1.6) translateY(-140px) rotate(80deg);
+        }
+        .revealed .content {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .waiting .content {
+            filter: grayscale(1) brightness(0.3) blur(3px);
+            opacity: 0.5;
+        }
+
+        @keyframes creep {
+            0% { transform: scale(1) translateX(0); }
+            50% { transform: scale(1.1) translateX(10px); }
+            100% { transform: scale(1) translateX(0); }
+        }
+        .bug-animate { animation: creep 0.5s infinite ease-in-out; }
+
+        .hud {
+            position: absolute;
+            top: 25px;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            z-index: 100;
+        }
+
+        .hud-panel {
+            background: rgba(0, 0, 0, 0.85);
+            padding: 12px 45px;
+            border-radius: 25px;
+            border: 4px solid #4ade80;
+            font-size: 2.2rem;
+            box-shadow: 0 0 25px rgba(74, 222, 128, 0.4);
+        }
+
+        #splash-screen {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle, #065f46 0%, #064e3b 100%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="splash-screen">
+        <h1 class="text-7xl mb-6 text-yellow-400">송충이 경보!</h1>
+        <p class="text-2xl mb-10 text-white">나뭇잎 아래 송충이(🐛)가 숨어있어요.<br>아이템들이 서로 멀리 떨어져 있으니 침착하게 수확하세요!</p>
+        <div class="w-24 h-24 border-8 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+
+    <div class="hud">
+        <div class="hud-panel text-red-400">남은 시간: <span id="timer">45</span>초</div>
+        <div class="hud-panel text-yellow-300">농장 점수: <span id="score">0</span></div>
+    </div>
+
+    <div id="game-container">
+        <video id="input_video" autoplay playsinline muted></video>
+        <canvas id="output_canvas"></canvas>
+        <div id="item-layer"></div>
+    </div>
+
+    <div id="modal" class="hidden fixed inset-0 bg-black/95 z-[2000] flex items-center justify-center">
+        <div class="bg-stone-50 p-16 rounded-[3rem] text-black text-center max-w-xl w-full border-t-[12px] border-green-600">
+            <h1 class="text-7xl mb-6 font-black text-green-800">수확 일기</h1>
+            <p id="m-desc" class="text-4xl mb-12 font-bold text-stone-600"></p>
+            <button onclick="location.reload()" class="bg-green-700 text-white px-20 py-8 rounded-full text-4xl font-black hover:bg-green-800 active:scale-90 transition-all shadow-xl">다시 도전</button>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('input_video');
+        const canvas = document.getElementById('output_canvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const timerEl = document.getElementById('timer');
+        const field = document.getElementById('item-layer');
+        const modal = document.getElementById('modal');
+        const splash = document.getElementById('splash-screen');
+
+        let score = 0;
+        let timeLeft = 45;
+        let active = false;
+        let items = [];
+        const MIN_DISTANCE_PCT = 18; // 아이템 간 최소 거리 (화면 백분율 기준)
+
+        function createItem(type) {
+            let rx, ry, isValid;
+            let attempts = 0;
+
+            // 충돌 회피 알고리즘: 기존 아이템과 겹치지 않는 위치 찾기
+            do {
+                isValid = true;
+                rx = 15 + Math.random() * 70;
+                ry = 15 + Math.random() * 70;
+                attempts++;
+
+                for (let other of items) {
+                    const dist = Math.sqrt(Math.pow(rx - other.x, 2) + Math.pow(ry - other.y, 2));
+                    if (dist < MIN_DISTANCE_PCT) {
+                        isValid = false;
+                        break;
+                    }
+                }
+                // 100번 시도 후에도 못 찾으면 그냥 배치 (무한 루프 방지)
+            } while (!isValid && attempts < 100);
+
+            const container = document.createElement('div');
+            container.className = 'strawberry-item';
+            
+            const leaf = document.createElement('div');
+            leaf.className = 'leaf';
+            leaf.innerHTML = '🍃';
+
+            const content = document.createElement('div');
+            content.className = 'content';
+            if (type === 'bug') {
+                content.innerHTML = '🐛';
+                content.classList.add('bug-animate');
+            } else if (type === 'gold') {
+                content.innerHTML = '✨🍓';
+            } else {
+                content.innerHTML = '🍓';
+            }
+
+            container.appendChild(content);
+            container.appendChild(leaf);
+            
+            container.style.left = rx + '%';
+            container.style.top = ry + '%';
+            field.appendChild(container);
+            
+            const itemObj = {
+                el: container,
+                type,
+                x: rx,
+                y: ry,
+                revealed: false,
+                canHarvest: false,
+                done: false
+            };
+            items.push(itemObj);
+            return itemObj;
+        }
+
+        function spawnWave() {
+            field.innerHTML = '';
+            items = [];
+            // 아이템 개수를 약간 줄여서 간격 확보를 더 확실하게 함
+            for(let i=0; i<5; i++) createItem('normal');
+            for(let i=0; i<3; i++) createItem('bug');
+            if(Math.random() > 0.4) createItem('gold');
+        }
+
+        function onResults(results) {
+            ctx.save();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (results.multiHandLandmarks) {
+                for (const landmarks of results.multiHandLandmarks) {
+                    drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {color: '#4ade80', lineWidth: 5});
+
+                    if(!active) continue;
+                    const handPoints = landmarks.map(lm => ({ x: (1 - lm.x) * 100, y: lm.y * 100 }));
+
+                    items.forEach(item => {
+                        if(item.done) return;
+                        
+                        // 손바닥 및 손가락 끝점 모두 체크
+                        const isHandNear = handPoints.some(p => Math.sqrt(Math.pow(p.x - item.x, 2) + Math.pow(p.y - item.y, 2)) < 11);
+
+                        if(isHandNear) {
+                            if(!item.revealed) {
+                                item.revealed = true;
+                                item.el.classList.add('revealed');
+                                item.el.classList.add('waiting');
+                                
+                                // 요청하신 1초 유예 기간
+                                setTimeout(() => {
+                                    if(!item.done) {
+                                        item.canHarvest = true;
+                                        item.el.classList.remove('waiting');
+                                    }
+                                }, 1000); 
+                            } else if(item.canHarvest) {
+                                item.done = true;
+                                if(item.type === 'bug') {
+                                    score = Math.max(0, score - 100);
+                                    item.el.style.transform = 'scale(2) rotate(180deg)';
+                                    item.el.style.filter = 'sepia(1) saturate(5)';
+                                } else {
+                                    score += (item.type === 'gold' ? 150 : 40);
+                                    item.el.style.transform = 'translateY(200px) scale(0)';
+                                }
+                                item.el.style.opacity = '0';
+                                scoreEl.innerText = score;
+                                
+                                // 다음 스테이지 체크
+                                if(items.filter(i => i.type !== 'bug' && !i.done).length === 0) {
+                                    setTimeout(spawnWave, 1000);
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+            ctx.restore();
+        }
+
+        const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
+        hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
+        hands.onResults(onResults);
+
+        const camera = new Camera(video, { onFrame: async () => { await hands.send({image: video}); }, width: 800, height: 600 });
+
+        window.onload = () => {
+            canvas.width = 800; canvas.height = 600;
+            camera.start().then(() => {
+                splash.style.display = 'none';
+                active = true;
+                spawnWave();
+                const timerId = setInterval(() => {
+                    if(!active) return clearInterval(timerId);
+                    timeLeft--;
+                    timerEl.innerText = timeLeft;
+                    if(timeLeft <= 0) {
+                        active = false;
+                        modal.classList.remove('hidden');
+                        document.getElementById('m-desc').innerText = `수확하신 점수는 ${score}점입니다!`;
+                    }
+                }, 1000);
+            });
+        };
+    </script>
+</body>
+</html>
+
+```
