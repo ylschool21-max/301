@@ -11,175 +11,100 @@
         
         body {
             font-family: 'Gaegu', cursive;
-            background-color: #fff5f5;
+            background-color: #fffafa;
         }
 
-        .card-inner {
-            transition: transform 0.6s;
-            transform-style: preserve-3d;
-            cursor: pointer;
+        .logo-container {
             position: relative;
-            width: 100%;
-            height: 100px;
+            display: inline-block;
         }
 
-        .card.flipped .card-inner {
-            transform: rotateY(180deg);
-        }
-
-        .card-front, .card-back {
+        .logo-container::before {
+            content: '';
             position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            background: radial-gradient(circle, #ffccd5 0%, transparent 70%);
+            z-index: -1;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
         }
 
-        .card-front {
-            background-color: #ff8787;
-            color: white;
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 0.5; }
         }
 
-        .card-back {
-            background-color: white;
-            transform: rotateY(180deg);
-            border: 2px solid #ff8787;
+        .btn-bounce {
+            animation: bounce 2s infinite;
         }
 
-        .floating {
-            animation: floating 3s ease-in-out infinite;
-        }
-
-        @keyframes floating {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-10px);}
+            60% {transform: translateY(-5px);}
         }
     </style>
 </head>
 <body class="text-gray-800">
 
     <!-- 상단 환영 메시지 -->
-    <div class="bg-white shadow-md p-4 text-center sticky top-0 z-50">
-        <h1 class="text-2xl md:text-3xl font-bold text-pink-500">
-            ✨ 영일유치원 해초롱반에 오신 것을 환영합니다 ✨
+    <div class="bg-white/90 backdrop-blur-sm shadow-sm p-5 text-center sticky top-0 z-50 border-b border-pink-100">
+        <h1 class="text-2xl md:text-3xl font-bold text-pink-500 tracking-tight">
+            🌸 영일유치원 해초롱반에 오신 것을 환영합니다 🌸
         </h1>
     </div>
 
-    <div class="max-w-md mx-auto p-6 space-y-8">
+    <div class="max-w-xl mx-auto p-6 space-y-10">
         
         <!-- 메인 로고 및 급훈 섹션 -->
-        <div class="bg-white rounded-[2rem] p-8 shadow-xl border-4 border-pink-200 text-center relative">
-            <div class="w-full aspect-square bg-pink-50 rounded-full overflow-hidden mb-6 border-4 border-white shadow-inner flex items-center justify-center">
-                <!-- 로고 이미지 (첨부파일) -->
-                <img src="1000000771.jpg" alt="해초롱반 로고" class="w-full h-full object-contain p-2" onerror="this.src='https://via.placeholder.com/300/FFB6C1/FFFFFF?text=Haechorong'">
+        <div class="bg-white rounded-[3rem] p-10 shadow-2xl border-4 border-pink-100 text-center relative overflow-hidden">
+            <!-- 학급 로고 배치 -->
+            <div class="logo-container mb-8">
+                <img src="1000000771.jpg" alt="해초롱반 로고" class="w-64 h-64 md:w-80 md:h-80 object-contain mx-auto drop-shadow-xl" onerror="this.src='https://via.placeholder.com/300/FFB6C1/FFFFFF?text=Haechorong+Logo'">
             </div>
             
-            <div class="inline-block bg-yellow-400 text-white px-4 py-1 rounded-full text-lg font-bold mb-4 shadow-sm">
-                우리반 급훈
+            <div class="inline-block bg-pink-400 text-white px-6 py-2 rounded-full text-xl font-bold mb-6 shadow-md">
+                우리 반 급훈
             </div>
-            <p class="text-xl font-bold text-gray-700 leading-relaxed">
+            
+            <p class="text-2xl md:text-3xl font-bold text-gray-700 leading-tight">
                 "사이좋게 다같이<br>
                 안전하게 노는 행복한 해초롱 어린이"
             </p>
         </div>
 
-        <!-- 딸기 수확하기 게임 섹션 -->
-        <div class="bg-red-50 rounded-[2rem] p-6 border-4 border-red-200 shadow-lg">
-            <div class="text-center mb-6">
-                <h2 class="text-2xl font-bold text-red-500 mb-2">🍓 딸기 수확하기 놀이 🍓</h2>
-                <p class="text-gray-600">같은 그림을 찾아 카드를 뒤집어보세요!</p>
-                <div id="score" class="mt-2 font-bold text-red-600">수확한 딸기: 0개</div>
+        <!-- 딸기 수확하기 게임 카드 섹션 -->
+        <div class="bg-red-400 rounded-[3rem] p-10 shadow-2xl text-center text-white relative border-b-8 border-red-600">
+            <div class="text-4xl mb-4">🍓</div>
+            <h2 class="text-3xl font-bold mb-8">딸기 수확하기 놀이</h2>
+            
+            <!-- 카드 형식의 버튼 -->
+            <div class="bg-white/20 p-8 rounded-[2rem] border-2 border-dashed border-white/50">
+                <a href="./04/index.html" class="inline-block bg-white text-red-500 text-2xl font-bold py-6 px-12 rounded-2xl shadow-lg transition-transform hover:scale-105 active:scale-95 btn-bounce">
+                    딸기 게임하기 ➔
+                </a>
             </div>
-
-            <div id="game-board" class="grid grid-cols-3 gap-3">
-                <!-- 자바스크립트로 카드가 생성됩니다 -->
-            </div>
-
-            <div id="win-message" class="hidden mt-6 p-4 bg-green-100 border-2 border-green-400 rounded-xl text-center animate-bounce">
-                <p class="text-green-700 font-bold">참 잘했어요! 🍓<br>해초롱반 친구들은 최고예요!</p>
-                <button onclick="resetGame()" class="mt-3 bg-green-500 text-white px-4 py-1 rounded-full text-sm">다시 하기</button>
-            </div>
+            
+            <!-- 부가 설명 삭제됨 -->
         </div>
 
-        <!-- 하단 장식 -->
-        <div class="text-center text-gray-400 text-xs pb-10">
-            © 영일유치원 해초롱반 랜딩페이지
+        <!-- 하단 정보 -->
+        <div class="flex justify-center items-center gap-4 text-pink-300">
+            <span class="h-px w-12 bg-pink-200"></span>
+            <span class="text-sm font-bold uppercase tracking-widest italic">Haechorong Class</span>
+            <span class="h-px w-12 bg-pink-200"></span>
         </div>
     </div>
 
-    <script>
-        const items = ['🍓', '🍓', '🍰', '🍰', '🥤', '🥤', '🍦', '🍦', '🍪', '🍪', '🎁', '🎁'];
-        let flippedCards = [];
-        let matchedCount = 0;
-        const gameBoard = document.getElementById('game-board');
-        const scoreDisplay = document.getElementById('score');
-        const winMessage = document.getElementById('win-message');
+    <footer class="pb-12 text-center text-gray-400 text-sm">
+        © 영일유치원 해초롱반
+    </footer>
 
-        function shuffle(array) {
-            return array.sort(() => Math.random() - 0.5);
-        }
-
-        function createBoard() {
-            const shuffledItems = shuffle([...items]);
-            gameBoard.innerHTML = '';
-            shuffledItems.forEach((item, index) => {
-                const card = document.createElement('div');
-                card.className = 'card w-full h-[100px]';
-                card.innerHTML = `
-                    <div class="card-inner" onclick="flipCard(this, '${item}')">
-                        <div class="card-front">?</div>
-                        <div class="card-back">${item}</div>
-                    </div>
-                `;
-                gameBoard.appendChild(card);
-            });
-        }
-
-        function flipCard(cardInner, item) {
-            const card = cardInner.parentElement;
-            if (card.classList.contains('flipped') || flippedCards.length === 2) return;
-
-            card.classList.add('flipped');
-            flippedCards.push({ card, item });
-
-            if (flippedCards.length === 2) {
-                setTimeout(checkMatch, 700);
-            }
-        }
-
-        function checkMatch() {
-            const [card1, card2] = flippedCards;
-            if (card1.item === card2.item) {
-                matchedCount += 2;
-                scoreDisplay.innerText = `수확한 딸기: ${matchedCount / 2}세트`;
-                if (matchedCount === items.length) {
-                    winMessage.classList.remove('hidden');
-                }
-            } else {
-                card1.card.classList.remove('flipped');
-                card2.card.classList.remove('flipped');
-            }
-            flippedCards = [];
-        }
-
-        function resetGame() {
-            matchedCount = 0;
-            scoreDisplay.innerText = '수확한 딸기: 0개';
-            winMessage.classList.add('hidden');
-            createBoard();
-        }
-
-        // 시작
-        window.onload = createBoard;
-    </script>
 </body>
 </html>
 
 ```
-I
